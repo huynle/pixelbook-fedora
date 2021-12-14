@@ -1,6 +1,6 @@
 # Setup Fedora on Pixelbook
 
-This is an ansible playbook to autoamte running commands from https://github.com/jmontleon/pixelbook-fedora
+This is an ansible playbook to automate running commands from https://github.com/jmontleon/pixelbook-fedora
 
 # Requirements
 
@@ -11,4 +11,4 @@ This playbook makes modifications to your system. Ensure you have a backup befor
 
 # Usage
 
-`ansible-playbook playbook.yml`
+`ansible-playbook -K playbook.yml`

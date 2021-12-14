@@ -133,9 +133,9 @@
       when: tmp_dir is defined
 
     - name: Remove device maps
-      command: "kpartx -dv {{ tmp_dir.path }}/{{ recovery_image_unarchive_files.files | first }}"
+      command: "kpartx -dv {{ tmp_dir.path }}/{{ recovery_image_unarchive_results.files | first }}"
       become: true
-      when: recovery_image_unarchive_files is defined
+      when: recovery_image_unarchive_results is defined
 
     - name: Remove tmp directory
       file:
