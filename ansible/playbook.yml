@@ -6,6 +6,16 @@
       msg: This playbook is only intended to be run on Fedora
     when: ansible_distribution != 'Fedora'
 
+  - name: Check distribution version
+    fail:
+      msg: You must be running Fedora 34 or greater
+    when: ansible_distribution_version|int < 34
+
+  - name: Check user
+    fail:
+      msg: You should run this as a non-root user
+    when: ansible_user_id == "root"
+
   - block:
     - name: Enable COPR repo
       community.general.copr:
@@ -36,11 +46,23 @@
         path: "{{ playbook_dir }}"
       register: tmp_dir
 
+    - name: Check for downloaded image
+      stat:
+        path: "{{ playbook_dir }}/{{ recovery_image_url | split('/') | last }}"
+      register: file
+
     - name: Download recovery image
       get_url:
         url: "{{ recovery_image_url }}"
-        dest: "{{ tmp_dir.path}}"
+        dest: "{{ playbook_dir }}"
       register: recovery_image_archive
+      when: not(file.stat.exists)
+
+    - name: Set image file
+      set_fact:
+        recovery_image_archive:
+          dest: "{{ playbook_dir }}/{{ recovery_image_url | split('/') | last }}"
+      when: file.stat.exists
 
     - name: Unzip recovery image
       unarchive:
