@@ -38,7 +38,7 @@
 
     - name: Parse recovery image information
       set_fact:
-        recovery_image_url: "{{ recovery_info.content | regex_search('https.*eve_recovery_stable.*zip') | split('\"') | last }}"
+        recovery_image_url: "{{ (recovery_info.content | regex_search('https.*eve_recovery_stable.*zip')).split('\"') | last }}"
 
     - name: Create a temporary working directory
       tempfile:
@@ -48,7 +48,7 @@
 
     - name: Check for downloaded image
       stat:
-        path: "{{ playbook_dir }}/{{ recovery_image_url | split('/') | last }}"
+        path: "{{ playbook_dir }}/{{ recovery_image_url.split('/') | last }}"
       register: file
 
     - name: Download recovery image
@@ -75,11 +75,16 @@
     - name: Make device maps
       become: true
       command: "kpartx -s -av {{ tmp_dir.path }}/{{ recovery_image_unarchive_results.files | first }}"
+      register: kpartx
+
+    - name:
+      set_fact:
+        loop_device: "{{ kpartx.stdout_lines[2].split(' ')[2] }}"
 
     - name: Mount recovery image
       mount:
         path: /mnt
-        src: "/dev/mapper/loop0p3"
+        src: "/dev/mapper/{{ loop_device }}"
         fstype: ext2
         opts: ro
         state: mounted
@@ -147,7 +152,7 @@
     - name: Unmount recovery image
       mount:
         path: /mnt
-        src: "/dev/mapper/loop0p3"
+        src: "/dev/mapper/{{ loop_device }}"
         opts: ro
         state: absent
         fstab: "{{ tmp_dir.path }}/fstab }}"
