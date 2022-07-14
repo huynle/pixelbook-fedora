@@ -1,6 +1,6 @@
 # Fedora on Pixelbook
 
-This process can be used to get Fedora installed on your Chromebook. This process will destroy your data so make sure you have backups of anything you need. When you're done ChromeOS will not be bootable and your data will be wiped. See the notes below for how to adapt them for [other distrbutions](#other-distributions).
+This process can be used to get Fedora installed on your Chromebook. **This process will destroy your data so make sure you have backups of anything you need. When you're done ChromeOS will not be bootable and your data will be wiped.** See the notes below for how to adapt them for [other distrbutions](#other-distributions).
 
 What works and doesn't work:
 
@@ -18,10 +18,19 @@ What works and doesn't work:
 | Touchscreen | [Working](#Touchscreen) |
 | Wireless | Working |
 
-## Required Hardware
-- Google Pixelbook (2017)
+## Requirements
+- Google Pixelbook (2017) **The steps below will wipe your data and account settings.**
 - [SuzyQable](https://www.sparkfun.com/products/14746)
 - A second computer or a USB A to USB C adapter so you can plug the other end into the Pixelbook itself
+- A willingness to patiently troubleshoot and diagnose issues. This is an advanced task and yields imperfect results. Many desktop environments, display managers, and configurations have not been tested fully, if at all, and may require additional work to make function. Most of the packages, scripts, and configs provided here are workarounds to known issues for which there are currently no proper fix or configuration.
+
+- You should know how to perform these tasks or be ready to google them for troubleshooting purposes if something goes wrong:
+    - Install, remove, and update packages on Fedora
+    - Enable, disable, stop, and (re)start systemd services
+    - Change runlevels using systemd, including from the GRUB menu using the kernel command line
+    - Change display managers and / or desktops to determine if the problem is specific to one or all.
+    - Enable wireless network connections with NetworkManager or systemd-networkd from the shell.
+    - Install, configure, and run playbooks with ansible
 
 ## Unlocking the Pixelbook to install the Coreboot Firmware
 **These steps will wipe your data and account settings. Do not proceed if you need data on your Chromebook.**
@@ -52,7 +61,6 @@ You may also encounter a [bug](https://bugzilla.kernel.org/show_bug.cgi?id=21526
 Once fedora is installed you may make use of the [ansible playbook](ansible/README.md) provided for configuration or continue following the instructions in this file.  
 
 1. `sudo dnf -y copr enable jmontleon/pixelbook`
-1. `sudo dnf config-manager --setopt 'copr:copr.fedorainfracloud.org:jmontleon:pixelbook.priority=98' --save`
 1. `sudo dnf -y update`
 
 ## Audio
@@ -73,7 +81,8 @@ By default audio will not work at all, but by copying topology and firmware file
     1. `sudo dnf swap wireplumber pipewire-media-session`
     1. `sudo dnf swap pipewire-jack-audio-connection-kit jack-audio-connection-kit`
     1. `sudo dnf remove pipewire-alsa`
-1. Add the ucm2 profile `sudo dnf -y install pixelbook-alsa-ucm`
+1. Add the ucm2 profile `sudo dnf -y install pixelbook-alsa-ucm pixelbook-acpi`
+1. `systemctl --user --now enable pixelbook-acpi`
 1. After rebooting you should have audio (Note: Some systems require 2 or occasionally 3 reboots. See the troubleshooting section for details)
 
 ## Brightness
@@ -105,11 +114,10 @@ In Gnome, to use the Capslock and Super keys run these commands at login or add 
 1. `sudo dnf -y install pixelbook-udev pixelbook-scripts`, if you haven't already.
 1. `sudo dnf -y update`, if you haven't already.
 1. `sudo mv /etc/acpi/events/powerconf /etc/acpi/events/powerconf.disabled~` This will prevent the power button from causing an immediate shutdown in Gnome.
-1. `sudo systemctl enable acpid`
-1. Gnome handles screen orientation automatically.
-1. For others a script, `pixelbook-display-orientation`, is available that can be set to start at login. 
-1. Set up `/usr/bin/pixelbook-disable-tablet-touchpad` to run automatically at login to work around the touchpad not turning off automatically in tablet mode in all DE, including Gnome.
-1. After rebooting screen orientation should work.
+1. `sudo systemctl --now enable acpid`
+1. Gnome and KDE handle screen orientation automatically in tablet mode.
+1. For others `systemctl --user --now enable pixelbook-display-orientation`
+1. `systemctl --user --now enable pixelbook-acpi` will listen to tablet mode and audio jack related events and act accordingly
 
 ## Touchpad
 A frequent complaint is that the touchpad does not work after reboot. If you encounter this you can install the pixelbook-touchpad-service as a workaround. This is a service that unloads and loads two kernel modules.
@@ -126,18 +134,23 @@ If you enable Tap to Click in Gnome or Xfce it will also enable Tap to Drag. To 
 ## Touchscreen
 1. `sudo dnf -y install pixebolbook-scripts`, if you haven't already.
 1. `sudo usermod -aG input $USER`, if you haven't already
-1. Configure `/usr/bin/pixelbook-touchscreen-click` to run automatically at login 
-1. Reboot and you should be able to click, double click, and right click (two finger tap) using the touchscreen.
+1. `sudo usermod -aG tty $USER`
+1. Gnome and KDE have their own gesture logic. For Xfce and others `systemctl --user --now enable pixelbook-touchscreen-click`
 
 ## Excessive AER logging
 Watching journalctl you'll note lots of logging about AER corrections. The pixelbook-aer package contains a workaround for this.
 1. `sudo dnf -y install pixelbook-aer`
 1. `sudo systemctl enable --now pixelbook-aer`
 
+# Additional packages
+A lot of common software is not available in Fedora, such as nvidia drivers and vlc. Fortunately a plethora of software is available from [RPM Fusion](https://rpmfusion.org/).
+
 # Troubleshooting.
 When rebooting users have observed sound continuing to fail and the mouse not working. If this happens, the problem is often remedied by rebooting via the Power+Refresh button or holding down the the power button until the system powers off and then using it to power on the system again. The touchpad section above contains a service that will mask the problem in the case of the mouse.  
   
-See past issues for examples [1](https://github.com/jmontleon/pixelbook-fedora/issues/1) and [2](https://github.com/jmontleon/pixelbook-fedora/issues/2)
+See past issues for examples [1](https://github.com/jmontleon/pixelbook-fedora/issues/1) and [2](https://github.com/jmontleon/pixelbook-fedora/issues/2)  
+  
+Issues are welcome if you think you found something Pixelbook specific. Full logs, detailed explanations of steps taken, configuration performed, etc. are important. It is impossible to provide help with comments that simply state things aren't working as expected.
 
 # Other distributions
 For the most part nothing in this repo is distribution specific other than the availability of packages to simplify the install process. The primary adjustments you will need to be concerned about are listed below.
