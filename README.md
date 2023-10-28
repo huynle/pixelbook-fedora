@@ -1,3 +1,6 @@
+### This repo is no longer maintained
+- [Sound](https://github.com/jmontleon/pixelbook-fedora/issues/51). [is](https://github.com/jmontleon/pixelbook-fedora/issues/47). [always](https://bugzilla.kernel.org/show_bug.cgi?id=215109). [always](https://github.com/jmontleon/pixelbook-fedora/blob/main/specs/pixelbook-alsa-ucm.spec#L39). [broken](https://github.com/jmontleon/pixelbook-fedora/blob/main/specs/pixelbook-alsa-ucm.spec#L36).
+
 # Fedora on Pixelbook
 
 This process can be used to get Fedora installed on your Chromebook. **This process will destroy your data so make sure you have backups of anything you need. When you're done ChromeOS will not be bootable and your data will be wiped.** See the notes below for how to adapt them for [other distrbutions](#other-distributions).
@@ -7,7 +10,7 @@ What works and doesn't work:
 | Component     | Status      |
 | ------------- |-------------|
 | Ambient Light Sensor | Mostly Working [Issue](https://github.com/jmontleon/pixelbook-fedora/issues/18)  |
-| Audio | [Working](#Audio) |
+| Audio | Broken as of 6.1.0 |
 | Brightness | [Working](#Brightness) |
 | Bluetooth | Working |
 | Camera | Working |
@@ -66,7 +69,7 @@ Once fedora is installed you may make use of the [ansible playbook](ansible/READ
 ## Audio
 By default audio will not work at all, but by copying topology and firmware files from a recovery image the speakers will work. With some additional configuration the microphone, headphone jack, and possibly other aspects work as well.
 
-1. Download the latest eve recovery image from [cros-updates-serving.appspot.com](https://cros-updates-serving.appspot.com/)
+1. Download the latest eve recovery image from [chromiumdash.appspot.com/serving-builds](https://chromiumdash.appspot.com/serving-builds?deviceCategory=Chrome%20OS)
 1. Unzip the file. As an example `unzip chromeos_13904.55.0_eve_recovery_stable-channel_mp-v2.bin.zip`
 1. Create device maps `sudo kpartx -av chromeos_13904.55.0_eve_recovery_stable-channel_mp-v2.bin`
 1. Mount the ChromeOS root filesystem `sudo mount -o ro /dev/mapper/loop0p3 /mnt`
@@ -113,7 +116,11 @@ In Gnome, to use the Capslock and Super keys run these commands at login or add 
 ## Orientation
 1. `sudo dnf -y install pixelbook-udev pixelbook-scripts`, if you haven't already.
 1. `sudo dnf -y update`, if you haven't already.
-1. `sudo mv /etc/acpi/events/powerconf /etc/acpi/events/powerconf.disabled~` This will prevent the power button from causing an immediate shutdown in Gnome.
+1. `edit /etc/acpi/events/powerconf and comment out the following two lines. This will prevent the power button from causing an immediate shutdown in Gnome.
+```
+event=button/power.*
+action=/etc/acpi/actions/power.sh
+```
 1. `sudo systemctl --now enable acpid`
 1. Gnome and KDE handle screen orientation automatically in tablet mode.
 1. For others `systemctl --user --now enable pixelbook-display-orientation`
@@ -132,7 +139,7 @@ If you enable Tap to Click in Gnome or Xfce it will also enable Tap to Drag. To 
 1. `sudo dnf -y install pixelbook-touchpad-tweak`
 
 ## Touchscreen
-1. `sudo dnf -y install pixebolbook-scripts`, if you haven't already.
+1. `sudo dnf -y install pixelbook-scripts`, if you haven't already.
 1. `sudo usermod -aG input $USER`, if you haven't already
 1. `sudo usermod -aG tty $USER`
 1. Gnome and KDE have their own gesture logic. For Xfce and others `systemctl --user --now enable pixelbook-touchscreen-click`
