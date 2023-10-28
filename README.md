@@ -1,6 +1,3 @@
-### This repo is no longer maintained
-- [Sound](https://github.com/jmontleon/pixelbook-fedora/issues/51). [is](https://github.com/jmontleon/pixelbook-fedora/issues/47). [always](https://bugzilla.kernel.org/show_bug.cgi?id=215109). [always](https://github.com/jmontleon/pixelbook-fedora/blob/main/specs/pixelbook-alsa-ucm.spec#L39). [broken](https://github.com/jmontleon/pixelbook-fedora/blob/main/specs/pixelbook-alsa-ucm.spec#L36).
-
 # Fedora on Pixelbook
 
 This process can be used to get Fedora installed on your Chromebook. **This process will destroy your data so make sure you have backups of anything you need. When you're done ChromeOS will not be bootable and your data will be wiped.** See the notes below for how to adapt them for [other distrbutions](#other-distributions).
@@ -10,7 +7,7 @@ What works and doesn't work:
 | Component     | Status      |
 | ------------- |-------------|
 | Ambient Light Sensor | Mostly Working [Issue](https://github.com/jmontleon/pixelbook-fedora/issues/18)  |
-| Audio | Broken as of 6.1.0 |
+| Audio | Working |
 | Brightness | [Working](#Brightness) |
 | Bluetooth | Working |
 | Camera | Working |
@@ -79,12 +76,7 @@ By default audio will not work at all, but by copying topology and firmware file
     1. `sudo cp /mnt/lib/firmware/intel/dsp_fw_C75061F3-F2B2-4DCC-8F9F-82ABB4131E66.bin /lib/firmware/intel`
     1. `sudo mkdir -p /opt/google/dsm/`
     1. `sudo cp /mnt/opt/google/dsm/dsmparam.bin /opt/google/dsm/dsmparam.bin`
-1. Replace pipewire with pulseaudio to fix a mic noise [issue](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/1452)
-    1. `sudo dnf swap --allowerasing pipewire-pulseaudio pulseaudio`
-    1. `sudo dnf swap wireplumber pipewire-media-session`
-    1. `sudo dnf swap pipewire-jack-audio-connection-kit jack-audio-connection-kit`
-    1. `sudo dnf remove pipewire-alsa`
-1. Add the ucm2 profile `sudo dnf -y install pixelbook-alsa-ucm pixelbook-acpi`
+1. Add audio packages `sudo dnf -y install pixelbook-alsa-ucm pixelbook-wireplumber pixelbook-scripts`
 1. `systemctl --user --now enable pixelbook-acpi`
 1. After rebooting you should have audio (Note: Some systems require 2 or occasionally 3 reboots. See the troubleshooting section for details)
 
@@ -96,17 +88,8 @@ By default audio will not work at all, but by copying topology and firmware file
 
 ## Keyboard
 
-### Hotkeys
+### Hotkeys / Capslock
 1. `sudo dnf -y install pixelbook-udev`, if you haven't already.
-
-### Capslock
-In Xfce, to use the Search key as a Capslock:
-1. `sudo dnf -y install xdotool`
-1. Configure a keyboard shortcut for SuperL to run `xdotool key Caps_Lock`
-
-In Gnome, to use the Capslock and Super keys run these commands at login or add them to a script to run at login:
-1. `xmodmap -e 'keysym Super_L = Caps_Lock'`
-1. `xmodmap -e 'keysym Super_R = Super_L'`
 
 ### Backlight
 1. `sudo dnf -y install pixelbook-scripts`
@@ -153,16 +136,23 @@ Watching journalctl you'll note lots of logging about AER corrections. The pixel
 A lot of common software is not available in Fedora, such as nvidia drivers and vlc. Fortunately a plethora of software is available from [RPM Fusion](https://rpmfusion.org/).
 
 # Troubleshooting.
-When rebooting users have observed sound continuing to fail and the mouse not working. If this happens, the problem is often remedied by rebooting via the Power+Refresh button or holding down the the power button until the system powers off and then using it to power on the system again. The touchpad section above contains a service that will mask the problem in the case of the mouse.  
+When rebooting users have observed sound continuing to fail and the mouse not working. If this happens, the problem is often remedied by rebooting via the Power+Refresh button or holding down the the power button until the system powers off and then using it to power on the system again. The touchpad section above contains a service that will mask the problem.  
   
-See past issues for examples [1](https://github.com/jmontleon/pixelbook-fedora/issues/1) and [2](https://github.com/jmontleon/pixelbook-fedora/issues/2)  
+5.16 introduced fixes to the display backlight.  
+  
+Audio has been a particularly problematic area at times. Make sure you're not using a known broken kernel.
+- An audio issue was introduced in the 5.15.5 kernel and fixed in 5.17.0. At some point 5.15 LTS kernels were also fixed.
+- In general 5.17.0 and above should work well although HDMI output has been broken since 5.17.0
+- 6.0-6.0.9 were broken
+- 6.1-6.1.12 were broken
+- A proposed [patch](https://lore.kernel.org/regressions/060ebffd-6ecd-f2f7-6fdf-5e7b8c544d0a@linux.intel.com/T/#mfffab5d0c6cba4395d40ea7e853a925cad4c8d3d) for HDMI output is available but not yet in the kernel.
+- There was one [issue](https://github.com/jmontleon/pixelbook-fedora/issues/56) report for the error `rt5514 i2c-10EC5514:00: Device with ID register e0220042 is not rt5514` appearing in dmesg and audio failing to work. The cause is unknown, but restoring ChromeOS and Reflashing the MrChromebox firmware appeared to resolve the issue.
   
 Issues are welcome if you think you found something Pixelbook specific. Full logs, detailed explanations of steps taken, configuration performed, etc. are important. It is impossible to provide help with comments that simply state things aren't working as expected.
 
 # Other distributions
 For the most part nothing in this repo is distribution specific other than the availability of packages to simplify the install process. The primary adjustments you will need to be concerned about are listed below.
 
-1. An audio issue was introduced in the 5.15.5 kernel and fixed in 5.17.0. 5.16.0 introduced fixes to the display backlight. In general 5.17.0 and above should work well.
 1. Reference [this PR](https://gitlab.com/cki-project/kernel-ark/-/merge_requests/1616/diffs) to see the kernel options that must be enabled for hardware support.
 1. To match placement of configuration and scripts that are provided by packages look at the corresponding spec file. All sources are located in the [configs](https://github.com/jmontleon/pixelbook-fedora/tree/main/configs) and [scripts](https://github.com/jmontleon/pixelbook-fedora/tree/main/scripts) directories.
 1. When a package is referenced, using the alsa ucm package as an example, note the [sources](https://github.com/jmontleon/pixelbook-fedora/blob/main/specs/pixelbook-alsa-ucm.spec#L6-L7) in the spec file and where they are [installed](https://github.com/jmontleon/pixelbook-fedora/blob/main/specs/pixelbook-alsa-ucm.spec#L21-L22) and manually do the same. Alsa is a special case in that 1.2.6 and above put these files in a conf.d directory. For older versions you'll probably need to move them one directory up.

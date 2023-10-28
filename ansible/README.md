@@ -13,15 +13,13 @@ This playbook makes modifications to your system. Ensure you have a backup befor
 
 `ansible-playbook -K playbook.yml`
 
-# Abbreviated configuration
+If you'd like (to continue) to use pulseaudio:
+`ansible-playbook -K playbook.yml -e sound_server=pulseaudio`
 
-## Keyboard
+By default the leftmeta key is configured as capslock. If you'd like to leave it as (or change it to) leftmeta:
+`ansible-playbook -K playbook.yml -e leftmeta=leftmeta`
 
-### Capslock
+Other valid values aside from `leftmeta` are also acceptable.
 
-#### Xfce
-1. Configure a keyboard shortcut for SuperL to run `xdotool key Caps_Lock`
-
-#### Gnome
-1. Run at login or automate `xmodmap -e 'keysym Super_L = Caps_Lock'`
-1. Run at login or automate `xmodmap -e 'keysym Super_R = Super_L'`
+You can revert either change by omitting the extra var. You can also combine as many extra vars as you want, for example:
+brightnessdown`ansible-playbook -K playbook.yml -e leftmeta=leftmeta -e sound_server=pulseaudio`
